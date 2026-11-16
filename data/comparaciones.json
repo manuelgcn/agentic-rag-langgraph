@@ -1,0 +1,29 @@
+{
+  "chunks/500": {
+    "similarity": {
+      "hit@5": 0.867,
+      "mrr": 0.78
+    },
+    "mmr": {
+      "hit@5": 0.867,
+      "mrr": 0.783
+    }
+  },
+  "chunks/1500": {
+    "similarity": {
+      "hit@5": 0.933,
+      "mrr": 0.789
+    },
+    "mmr": {
+      "hit@5": 0.733,
+      "mrr": 0.7
+    }
+  },
+  "embeddings/e5-large": {
+    "hit@5": 0.933,
+    "mrr": 0.661,
+    "min_relevante": 0.761,
+    "max_fuera_de_tema": 0.789,
+    "se_cuelan": "7/12"
+  }
+}

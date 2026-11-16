@@ -1,0 +1,8 @@
+.env
+.venv/
+storage/
+__pycache__/
+.ipynb_checkpoints/
+.CODEX/
+.vscode/
+data/papers/*.pdf
