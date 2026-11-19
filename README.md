@@ -61,59 +61,63 @@ flowchart LR
 
 ## Examples
 
-These are copied from the notebook's committed output and shortened: `[…]` marks trimmed text, and some `resultado:` lines (the sources a tool returned) are left out. Each turn starts with `[user/conversation]`, then come the tool calls, then the answer after `->`.
+Real turns from the notebook's committed output (sections 7.1 and 7.3), shortened where marked `[…]`.
 
-**A structured question goes to pandas, not to the vector store.** "How many talks about climate change were recorded after 2015?" (the topics are stored in English, so the agent translates the filter):
+**A structured question goes to pandas, not to the vector store.** "How many talks about climate change were recorded after 2015?" The topics are stored in English, so the agent translates the filter.
 
-```text
-[ted-conteo-c529232d/ted-conteo] ¿Cuántas charlas sobre cambio climático se grabaron después de 2015?
-  tool call: query_dataset({'filters': [{'column': 'topics', 'op': 'contains', 'value': 'climate change'}, {'column': 'year', 'op': '>', 'value': 2015}], 'count': True})
--> Se grabaron 91 charlas sobre cambio climático después de 2015, es decir, de 2016 en adelante. […]
-```
+> **User:** ¿Cuántas charlas sobre cambio climático se grabaron después de 2015?
+>
+> **Tool call:** `query_dataset({'filters': [{'column': 'topics', 'op': 'contains', 'value': 'climate change'}, {'column': 'year', 'op': '>', 'value': 2015}], 'count': True})`
+>
+> **Agent:** Se grabaron 91 charlas sobre cambio climático después de 2015, es decir, de 2016 en adelante. […]
 
 **A false premise is corrected from the source.** "Why does GPT-3 need fine-tuning for every task?"
 
-```text
-[premisa-falsa-3b0a7a2a/premisa-falsa] ¿Por qué GPT-3 necesita fine-tuning para cada tarea?
-  tool call: search_papers({'query': 'GPT-3 fine-tuning not required, few-shot learning without gradient updates', 'k': 5})
--> La premisa es incorrecta: según el paper, GPT-3 no necesita fine-tuning para cada tarea.
-
-- En todas las tareas se aplica "sin ninguna actualización de gradiente ni fine-tuning". La tarea y las demostraciones se especifican solo mediante texto [Language Models are Few-Shot Learners (GPT3).pdf p.1].
-[…]
-```
+> **User:** ¿Por qué GPT-3 necesita fine-tuning para cada tarea?
+>
+> **Tool call:** `search_papers({'query': 'GPT-3 fine-tuning not required, few-shot learning without gradient updates', 'k': 5})`
+>
+> **Agent:** La premisa es incorrecta: según el paper, GPT-3 no necesita fine-tuning para cada tarea. En todas las tareas se aplica "sin ninguna actualización de gradiente ni fine-tuning". La tarea y las demostraciones se especifican solo mediante texto [Language Models are Few-Shot Learners (GPT3).pdf p.1]. […]
 
 **Nothing found means no answer.** "Which TED talks did Lionel Messi give?"
 
-```text
-[ted-sin-datos-061d1e08/ted-sin-datos] ¿Qué charlas TED dio Lionel Messi?
-  tool call: query_dataset({'filters': [{'column': 'speaker', 'op': 'contains', 'value': 'Messi'}]})
-  resultado: SIN RESULTADOS RELEVANTES
--> No tengo información suficiente. Busqué charlas de un orador llamado Messi en el dataset TED (filtro: speaker contiene "Messi") y no apareció ninguna. […]
-```
+> **User:** ¿Qué charlas TED dio Lionel Messi?
+>
+> **Tool call:** `query_dataset({'filters': [{'column': 'speaker', 'op': 'contains', 'value': 'Messi'}]})`
+>
+> **Tool result:** `SIN RESULTADOS RELEVANTES`
+>
+> **Agent:** No tengo información suficiente. Busqué charlas de un orador llamado Messi en el dataset TED (filtro: speaker contiene "Messi") y no apareció ninguna. […]
 
-**Long-term memory crosses conversations.** The user introduces themselves in `conv-1`; in `conv-2`, with an empty history, the agent still knows who they are:
+**Long-term memory crosses conversations.** The user introduces themselves in one conversation; in a second one, with an empty history, the agent still knows who they are.
 
-```text
-[manu-db5f8d73/conv-1] Hola! Me llamo Manu y me interesan los transformers
-  tool call: save_memory({'facts': ['Se llama Manu', 'Le interesan los transformers']})
--> ¡Hola, Manu! Un gusto. Ya tengo anotado tu nombre y que te interesan los transformers. […]
+> **User** (conversation 1): Hola! Me llamo Manu y me interesan los transformers
+>
+> **Tool call:** `save_memory({'facts': ['Se llama Manu', 'Le interesan los transformers']})`
+>
+> **Agent:** ¡Hola, Manu! Un gusto. Ya tengo anotado tu nombre y que te interesan los transformers. […]
+>
+> **User** (conversation 2): ¿Cómo me llamo y qué me interesa?
+>
+> **Agent:** Te llamás Manu y te interesan los transformers.
 
-[manu-db5f8d73/conv-2] ¿Cómo me llamo y qué me interesa?
--> Te llamás Manu y te interesan los transformers.
-```
+**A model stuck in a loop still produces an answer.** Here the LLM is replaced by a stub that always asks for the same tool. The repeated calls are refused, and after 4 rounds the agent has to answer with what it already has.
 
-**A model stuck in a loop still produces an answer.** Here the LLM is replaced by a stub that always asks for the same tool. The repeated calls are refused, and after 4 rounds the agent has to answer with what it already has:
-
-```text
-[demo/bucle-1] ¿Qué es multi-head attention?
-  tool call: search_papers({'query': 'multi-head attention', 'k': 1})
-  resultado: ['Attention is all you need.pdf p.5']
-  tool call: search_papers({'query': 'multi-head attention', 'k': 1})
-  resultado: Ya hiciste esta misma consulta en esta pregunta: usá ese resultado en lugar de repetirla.
-[…]
-  tope de 4 rondas de tools: el LLM responde sin tools
--> Según el paper del Transformer, la multi-head attention es un mecanismo que permite al modelo atender conjuntamente a información de distintos subespacios de representación en distintas posiciones. […]
-```
+> **User:** ¿Qué es multi-head attention?
+>
+> **Tool call:** `search_papers({'query': 'multi-head attention', 'k': 1})`
+>
+> **Tool result:** `['Attention is all you need.pdf p.5']`
+>
+> **Tool call:** `search_papers({'query': 'multi-head attention', 'k': 1})`
+>
+> **Tool result:** Ya hiciste esta misma consulta en esta pregunta: usá ese resultado en lugar de repetirla.
+>
+> […] *(the same call and refusal, twice more)*
+>
+> **Trace:** tope de 4 rondas de tools: el LLM responde sin tools
+>
+> **Agent:** Según el paper del Transformer, la multi-head attention es un mecanismo que permite al modelo atender conjuntamente a información de distintos subespacios de representación en distintas posiciones. […]
 
 ## Evaluation
 
