@@ -34,21 +34,18 @@ University team project for *Taller de Tecnologías 2*, Universidad ORT Uruguay 
 
 ```mermaid
 flowchart LR
-    user["User<br/>notebook or Gradio"] <--> chat["chat()<br/>thread_id = user_id:conv"]
-    chat <--> agent
+    chat["chat()<br/>notebook or Gradio"] <--> agent
     subgraph LG["LangGraph StateGraph"]
-        agent["agent<br/>calls the LLM with the prompt,<br/>the history and the memories"]
-        tools["tools<br/>runs the tool calls;<br/>errors go back to the LLM"]
+        agent["agent<br/>LLM + prompt,<br/>history, memories"]
+        tools["tools<br/>runs tool calls,<br/>errors go back<br/>to the LLM"]
         agent -- tool_calls --> tools
         tools -- ToolMessage --> agent
     end
-    agent <--> llm["LLM<br/>Claude Sonnet 5.5 or<br/>gpt-oss-120b on Groq"]
+    agent <--> llm["LLM<br/>Claude Sonnet 5.5<br/>or Groq"]
     tools --> chroma[("Chroma<br/>search_papers<br/>search_dataset")]
-    tools --> df["pandas DataFrame<br/>query_dataset"]
-    tools <--> store[("SqliteStore<br/>long-term memory,<br/>per user")]
-    LG -. checkpointer .-> saver[("SqliteSaver<br/>short-term memory,<br/>per conversation")]
-    ingest["Ingestion<br/>PDFs: pypdf, cleaning, 1000/150 chunks<br/>TED: one card per talk + transcripts"] --> chroma
-    ingest --> df
+    tools --> df["pandas<br/>query_dataset"]
+    tools <--> store[("SqliteStore<br/>save_memory<br/>delete_memory")]
+    LG -.-> saver[("SqliteSaver<br/>checkpointer")]
 ```
 
 - **Agent node.** Calls the LLM with the tools bound and the user's stored memories injected into the system prompt. The prompt routes between document questions, dataset questions, general questions and small talk, and requires every answer to be grounded in retrieved context or to say there is not enough information.
